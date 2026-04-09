@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<title>AI面团发酵仿真实验平台</title>
+<style>
+*{box-sizing:border-box;font-family:system-ui,sans-serif}
+body{background:#f6f9ff;padding:20px;max-width:500px;margin:0 auto}
+.card{background:white;padding:24px;border-radius:16px;box-shadow:0 2px 10px rgba(0,0,0,0.1)}
+h2{color:#2c3e50;margin-top:0;text-align:center}
+.label{margin:12px 0 4px;font-weight:500}
+.input-group{margin-bottom:16px;}
+.range-tip{font-size:12px;color:#666;margin-top:2px;}
+input{width:100%;padding:10px 12px;border-radius:8px;border:1px solid #ddd;font-size:16px}
+button{width:100%;background:#2d8cf0;color:white;border:none;padding:12px;border-radius:8px;margin-top:20px;font-size:16px}
+.result{margin-top:20px;padding:16px;background:#f8f9fa;border-radius:12px}
+.vol{font-size:20px;font-weight:bold;color:#2d8cf0}
+.state{font-size:18px;margin:8px 0}
+.base-tip{background:#e8f3ff;padding:10px;border-radius:8px;text-align:center;margin-bottom:10px;color:#2d8cf0}
+</style>
+</head>
+<body>
+<div class="card">
+<h2>AI面团发酵仿真实验平台</h2>
+<div class="base-tip">初始面团体积：100 ml</div>
+
+<div class="input-group">
+  <div class="label">温度 (℃)</div>
+  <input type="number" id="temp" value="30" min="20" max="40">
+  <div class="range-tip">取值范围：20℃ ~ 40℃</div>
+</div>
+
+<div class="input-group">
+  <div class="label">湿度 (%)</div>
+  <input type="number" id="humi" value="75" min="50" max="90">
+  <div class="range-tip">取值范围：50% ~ 90%</div>
+</div>
+
+<div class="input-group">
+  <div class="label">水分 (%)</div>
+  <input type="number" id="water" value="50" min="40" max="60">
+  <div class="range-tip">取值范围：40% ~ 60%</div>
+</div>
+
+<div class="input-group">
+  <div class="label">糖 (%)</div>
+  <input type="number" id="sugar" value="5" min="0" max="10">
+  <div class="range-tip">取值范围：0% ~ 10%</div>
+</div>
+
+<div class="input-group">
+  <div class="label">盐 (%)</div>
+  <input type="number" id="salt" value="1" min="0" max="3">
+  <div class="range-tip">取值范围：0% ~ 3%</div>
+</div>
+
+<div class="input-group">
+  <div class="label">酵母用量 (%)</div>
+  <input type="number" id="yeast" value="1.0" step="0.1" min="0.5" max="2.0">
+  <div class="range-tip">取值范围：0.5% ~ 2.0%</div>
+</div>
+
+<div class="input-group">
+  <div class="label">发酵时间 (分钟)</div>
+  <input type="number" id="time" value="60" min="20" max="120">
+  <div class="range-tip">取值范围：20分钟 ~ 120分钟</div>
+</div>
+
+<button onclick="calc()">开始仿真</button>
+
+<div class="result" id="res" style="display:none">
+  <div class="vol">发酵后体积：<span id="vol">0</span> ml</div>
+  <div class="state">状态：<span id="state"></span></div>
+  <div id="tip"></div>
+</div>
+
+</div>
+
+<script>
+function calc(){
+  let t = parseFloat(document.getElementById("temp").value);
+  let h = parseFloat(document.getElementById("humi").value);
+  let water = parseFloat(document.getElementById("water").value);
+  let sugar = parseFloat(document.getElementById("sugar").value);
+  let salt = parseFloat(document.getElementById("salt").value);
+  let yeast = parseFloat(document.getElementById("yeast").value);
+  let time = parseFloat(document.getElementById("time").value);
+
+  let baseVolume = 100;
+
+  // 温度
+  let tempFactor = -0.008 * Math.pow(t - 30, 2) + 1;
+  tempFactor = Math.max(0.1, tempFactor);
+
+  // 湿度
+  let humiFactor = -0.0015 * Math.pow(h - 75, 2) + 1;
+  humiFactor = Math.max(0.2, humiFactor);
+
+  // 水分
+  let waterFactor = -0.001 * Math.pow(water - 50, 2) + 1;
+  waterFactor = Math.max(0.3, waterFactor);
+
+  // 糖
+  let sugarFactor = -0.01 * Math.pow(sugar - 5, 2) + 1;
+  sugarFactor = Math.max(0.3, sugarFactor);
+
+  // 盐
+  let saltFactor = -0.1 * Math.pow(salt - 1, 2) + 1;
+  saltFactor = Math.max(0.2, saltFactor);
+
+  // 酵母
+  let yeastFactor = yeast / 1.0;
+  yeastFactor = Math.max(0.5, Math.min(2.0, yeastFactor));
+
+  // 时间
+  let timeFactor = Math.log(1 + time / 25);
+
+  // 体积
+  let growth = tempFactor * humiFactor * waterFactor * sugarFactor * saltFactor * yeastFactor * timeFactor;
+  let volume = baseVolume * (1 + growth);
+  volume = Math.round(volume);
+
+  let state, tip;
+  if(volume < 130){
+    state = "发酵不足";
+    tip = "面团几乎没膨胀，蒸出来偏硬、个头小";
+  }else if(volume <= 250){
+    state = "发酵适中";
+    tip = "松软饱满，口感良好";
+  }else{
+    state = "发酵过度";
+    tip = "面团发酸、塌陷，蒸后会回缩";
+  }
+
+  document.getElementById("vol").innerText = volume;
+  document.getElementById("state").innerText = state;
+  document.getElementById("tip").innerText = tip;
+  document.getElementById("res").style.display = "block";
+}
+</script>
+</body>
+</html>
